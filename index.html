@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>DVA Group Project - CSE 6242 - Team KTCA</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom fonts for this template -->
+    <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="vendor/simple-line-icons/css/simple-line-icons.css">
+    <link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Catamaran:100,200,300,400,500,600,700,800,900" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Muli" rel="stylesheet">
+
+    <!-- Plugin CSS -->
+    <link rel="stylesheet" href="device-mockups/device-mockups.min.css">
+
+    <!-- Custom styles for this template -->
+    <link href="css/new-age.css?nocache=1506661352" rel="stylesheet">
+    
+    <!-- For D3 -->
+    <script src="d3/d3.min.js"></script>
+    <script src="d3/d3-simple-slider.min.js"></script>
+
+    <link href="css/d3_styles.css?nocache=1506661310" rel="stylesheet">
+
+  </head>
+
+  <body id="page-top">
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+      <div class="container">
+        <a class="navbar-brand js-scroll-trigger" href="#page-top">DVA Team Project - Team KTCA</a>
+        <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+          Menu
+          <i class="fas fa-bars"></i>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+          <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="#choropleth">Visualizations</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="#projectdetails">Project and Visualization Details</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="#team">Team</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <header class="masthead">
+      <div class="container h-100">
+        <div class="row h-100">
+          <div class="col-lg-1 my-auto">
+            <div class="header-content mx-auto">
+  
+            </div>
+          </div>
+          <div class="col-lg-11 my-auto">
+             
+            
+                    <div id="tooltip"></div>
+                    <!-- div to hold tooltip. -->
+                    <!-- <div id = "windowDropdown"></div> -->
+                    <svg width="1060" height="800" id="statesvg"></svg>
+                   
+                    <!-- svg to hold the network. -->
+                    <script src="js/hsvToRgb.js"></script>
+                    <script src="js/symptom_network.js?nocache=1506661310"></script>
+                    <script src="js/ustates.js"></script>
+                    <!-- creates uStates. -->
+                    <script>
+                        var filepath = 'data/choropleth_data.csv';
+                        var currentState, mt_slider, yr_slider, rolling_window = '2005-01';
+                        var svg = d3.select("#statesvg");
+                        svg.append("g")
+                            .attr("id", "choropleth")
+                            .attr("width", 960)
+                            .attr("height", 600)
+                            .attr("transform", "translate(0, 50)");
+
+                        function tooltipHtml(n, d) {
+                            return "<h4>" + n + "</h4><table>" + "<tr><td>Cluster Members:</td><td>" + (d.members) + "</td></tr></tr><tr><td colspan='2'>&nbsp;</td></tr>" + "<tr><td>Intra-Cluster Correlation: </td><td>" + (d.corr.toFixed(3)) + "</td></tr>" + "</table>";
+                        }
+                        
+                        // load data
+                        function drawChoropleth(rolling_window, filepath){
+                            var sampleData = {};
+                            d3.csv(filepath).then(function(data){
+                                data.filter(function(d){ return d.window === rolling_window; }).forEach(function(d) {
+                                    sampleData[d.state] = { 
+                                        corr: +d.corr,
+                                        members: d.members.replace('[','').replace(']','').replace(/'/g,''),
+                                        color: d3.interpolate("#ffffcc", "#800026")((+d.corr-0.5)/0.5)
+                                    };
+                                });
+
+                                d3.selectAll(".state").remove();
+                                uStates.draw("#choropleth", sampleData, tooltipHtml);
+                            });
+                        }
+
+                        // define legends
+                        function linearGradient(colorRange) {
+                            // https://www.visualcinnamon.com/2016/05/smooth-color-legend-d3-svg-gradient.html
+                            //Append a defs (for definition) element to your SVG
+                            var defs = svg.append("defs");
+
+                            //Append a linearGradient element to the defs and give it a unique id
+                            var linearGradient = defs.append("linearGradient")
+                                .attr("id", "linear-gradient");
+                            
+                            //A color scale
+                            var colorScale = d3.scaleLinear()
+                                .range(colorRange);
+
+                            //Append multiple color stops by using D3's data/enter step
+                            linearGradient.selectAll("stop")
+                                .data( colorScale.range() )
+                                .enter().append("stop")
+                                .attr("offset", function(d,i) { return i/(colorScale.range().length-1); })
+                                .attr("stop-color", function(d) { return d; });
+
+                            //Draw the rectangle and fill with gradient
+                            svg.append("rect")
+                                .attr("width", 300)
+                                .attr("height", 20)
+                                .attr('transform', "translate(" + 960 + ", " + 500 + ")rotate(270)")
+                                .style("fill", "url(#linear-gradient)");
+                        }
+                        function legend() {
+                            // add colorbar
+                            var colorRange = ["#ffffcc", "#800026"];
+                            linearGradient(colorRange);
+                        
+                            var width = 960, height = 600;
+                            
+                            svg.append('text')
+                                .attr("class", "legend-text")
+                                .attr('x', width + 1)
+                                .attr('y', height/2 + 215)
+                                .style("fill", "#fff")
+                                .text('0.5');            
+
+                            svg.append('text')
+                                .attr("class", "legend-text")
+                                .attr('x', width + 1)
+                                .attr('y', height/2 - 105)
+                                .style("fill", "#fff")
+                                .text('1.0');            
+
+                            svg.append('text')
+                                .attr("class", "legend-text")            
+                                .style("font-size", "14px")
+                                .style("fill", "#fff")
+                                .attr('transform', 'translate(990,275)rotate(90)')
+                                .text('Intra-Cluster Correlation');            
+                        }
+
+                        function get_rolling_window(){
+                            return yr_slider.value() + '-' + String("0" + mt_slider.value()).slice(-2);
+                        }
+                        function slider(){
+                            // add slider
+                            var years = d3.range(2005, 2019),
+                                // months = d3.scaleLinear()
+                                    // .domain(d3.range(1,13))
+                                    // .range(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']);
+                                months = d3.range(1,13);
+
+                            yr_slider = d3.sliderHorizontal()
+                                .min(d3.min(years))
+                                .max(d3.max(years))
+                                .step(1)
+                                .width(600)
+                                .tickFormat(d3.format(''));
+                            var yr_group = d3.select("#statesvg").append("g")
+                                .attr("width", 800)
+                                .attr("height", 100)
+                                .attr("transform", "translate(150,700)")
+                                .append("g")
+                                .attr("transform", "translate(30,30)");
+                            yr_group.call(yr_slider);
+
+                            // yr_slider.style("fill", "#fff");
+
+                            mt_slider = d3.sliderHorizontal()
+                                .min(d3.min(months))
+                                .max(d3.max(months))
+                                .step(1)
+                                .width(300);
+                            var mt_group = d3.select("#statesvg").append("g")
+                                .attr("width", 800)
+                                .attr("height", 100)
+                                .attr("transform", "translate(0,650)")
+                                .append("g")
+                                .attr("alignment", "center")
+                                .attr("transform", "translate(330,30)");
+                            mt_group.call(mt_slider);
+
+                            mt_slider.on('onchange', function() {
+                                rolling_window = get_rolling_window();
+                                updateChoropleth(rolling_window, filepath);
+                                updateNetwork(currentState);
+                            });
+                            yr_slider.on('onchange', function() {
+                                rolling_window = get_rolling_window();
+                                updateChoropleth(rolling_window, filepath);
+                                updateNetwork(currentState);
+                            });
+                        }
+
+                        legend();
+                        slider();
+                        function updateChoropleth(rolling_window, filepath){
+                            if(['2018-10', '2018-11', '2018-12'].indexOf(rolling_window) > -1){
+                                alert('no full data');
+                            }
+                            else{
+                                drawChoropleth(rolling_window, filepath);
+                                console.log(rolling_window, ' Loaded!');
+                            }
+                        }
+
+                        // start
+                        drawChoropleth(rolling_window, filepath);
+
+                        // window-size selection
+                        var windowSizes = ['3-month', '1-year', '2-year', '4-year', '8-year'];
+                        var windowSizesMap = ['1', '6', '12', '24', '48'];
+                        var dropdown = d3.select('#windowDropdown')
+                            .append('select')
+                            .attr('class', 'select')
+                            .on('change', onChange);
+                        var options = dropdown.selectAll('option')
+                            .data(windowSizes).enter()
+                            .append('option')
+                            .text(function(d){ return d; });
+                        function onChange() {
+                            filepath = '../Gordon/corr_by_state/choropleth_data.' + windowSizesMap[windowSizes.indexOf(d3.select('select').property('value'))] + '.csv';
+                            updateChoropleth(get_rolling_window(), filepath);
+                            updateNetwork(currentState);
+                        };
+
+                        // network
+                        function updateNetwork(state){
+                            currentState = state;
+                            d3.select('#networksvg').selectAll("*").remove();
+                            console.log("State: " + state + ", Window: " + rolling_window)
+                            drawNetwork(state, get_rolling_window(), "#networksvg");
+                        }
+
+                        var state = 'AL', rolling_window = '2005-01';
+                        console.log("State: " + state + ", Window: " + rolling_window)
+                        drawNetwork(state, rolling_window, "#networksvg");
+                    </script>
+                    <p style="text-align:center">Change the time window by moving the year and month sliders[, indicating the end of a 12-month window,] and see the choropleth changing dynamically</p>
+
+                    <h1 class="mb-5" style="text-align: center">Looking for help to understand how to read choropleth? Click on the button below for details.</h1>
+              <center><a href="#projectdetails" class="btn btn-outline btn-xl js-scroll-trigger" style="margin-top:-40px">Read Choropleth Details!</a> &nbsp;&nbsp;<a href="#networkgraph" class="btn btn-outline btn-xl js-scroll-trigger" style="margin-top:-40px">Go to Network Graph!</a></center>
+
+
+
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="features" id="networkgraph">
+        <div class="container">
+          <div class="section-heading text-center">
+            <h2>Network Graph</h2>
+            <p class="text-muted">Click on the states on the choropleth to view the network graph!</p>
+            <p>&nbsp;</p>
+            <center><a href="#choropleth" class="btn btn-outline btn-xl js-scroll-trigger" style="color: #c58f07; font-size:14px; font-weight: bold">View Choropleth</a></center>
+            <hr>
+          </div>
+          <div class="row" style="margin-right:0px; margin-left:0">
+            
+            <div class="col-lg-12 my-auto">
+              
+  
+               <!-- svg to hold the map. -->
+               <svg width="960" height="600" id="networksvg"></svg>
+            </div>
+          </div>
+        </div>
+      </section>
+  
+
+    <section class="download bg-primary text-center" id="projectdetails">
+        <div class="container">
+          <div class="row">
+            <div class="col-md-8 mx-auto">
+              <h2 class="section-heading">Discover what the project is all about!</h2>
+              <h3>Google Symptom Trends</h3>
+              <p>Google Trends symptoms were clustered by pair correlations using hierarchical clustering. The cluster with highest average pair correlation (intra-cluster correlation) is shown for each state.</p>
+              
+              <h3>About Choropleth</h3>
+              <p> Hover over each state to see the members of the cluster with highest average intra-cluster correlation. Change the time window by moving the year and month sliders and see the choropleth changing dynamically.</p>
+              </p>
+
+              <h3>About Network Graph</h3>
+              <p> All symptoms searched for are shown as nodes, with edges being pair correlations >= 0.5. There is a unique network for each state and rolling window combination. Hover over any node/edge to see details, drag any node to fix its position and double-click on a fixed node to release it.</p>
+              </p>
+
+            </div>
+          </div>
+        </div>
+      </section>
+  
+
+
+
+   
+    <section class="cta" id="team">
+      <div class="cta-content">
+        <div class="container">
+          <h2>Our Team</h2>
+          <!-- <a href="#contact" class="btn btn-outline btn-xl js-scroll-trigger">Let's Get Started!</a> -->
+          <ul class="list-inline">
+              <li class="list-inline-item" style="padding-right:50px"><img src="img/Chung.png"><br><h3 style="color:#fff">Chung-Han</h3></li>
+              <li class="list-inline-item" style="padding-right:50px"><img src="img/Alan.png" style="text-align:center"><br><h3 style="color:#fff">Alan Gust</h3></li>
+              <li class="list-inline-item" style="padding-right:50px">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="img/Gordon.png"><br><h3 style="color:#fff">Gordon Lemmon</h3></li>
+              <li class="list-inline-item" style="padding-right:50px"><img src="img/Keshav.png" style="text-align:center"><br><h3 style="color:#fff">Keshav Joshi</h3></li>
+              <li class="list-inline-item" style="padding-right:50px">&nbsp;&nbsp;&nbsp;<img src="img/Tarun.png" style="text-align:center"><br><h3 style="color:#fff">Tarun Sharma</h3></li>
+
+
+          </ul>
+
+        </div>
+      </div>
+      <div class="overlay"></div>
+    </section>
+
+   
+    <footer>
+      <div class="container">
+        <p>&copy; 2018. All Rights Reserved. This site is developed for OMSCS CSE6242. The website is best viewed on desktop/laptop.</p>
+
+      </div>
+    </footer>
+
+    <!-- Bootstrap core JavaScript -->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Plugin JavaScript -->
+    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+
+    <!-- Custom scripts for this template -->
+    <script src="js/new-age.min.js"></script>
+
+  </body>
+
+</html>

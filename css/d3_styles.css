@@ -1,0 +1,104 @@
+
+.state {
+    fill: none;
+    stroke: #a9a9a9;
+    stroke-width: 1
+}
+
+.state:hover {
+    fill-opacity: .5
+}
+
+#tooltip {
+    position: absolute;
+    text-align: center;
+    padding: 20px;
+    margin: -20px 0px 0 -150px;
+    font: 12px sans-serif;
+    background: #b0c4de;
+    border: 1px;
+    border-radius: 2px;
+    pointer-events: none
+}
+
+#tooltip h4 {
+    margin: 0;
+    font-size: 14px
+}
+
+#tooltip {
+    background: rgba(0,0,0,.9);
+    border: 1px solid gray;
+    border-radius: 5px;
+    font-size: 12px;
+    width: auto;
+    padding: 4px;
+    color: #fff;
+    opacity: 0
+}
+
+#tooltip table {
+    table-layout: fixed
+}
+
+#tooltip tr td {
+    padding: 0;
+    margin: 0;
+    word-wrap: "break-word";
+}
+
+#tooltip tr td:nth-child(1) {
+    width: 50px
+}
+
+#tooltip tr td:nth-child(2) {
+    text-align: center
+}
+
+.legend-text {
+    text-align: center;
+    font-size: 14px;
+    color: #fff;
+}
+
+.legendLinear text.label {
+    fill: '#fff'
+ }
+
+/* for network */
+.links line {
+    fill: none;
+    stroke: #666;
+}
+
+circle {
+    fill: #ccc;
+    stroke: black;
+    stroke-width: 1.5px;
+}
+
+text {
+    fill: #000;
+    font: 10px sans-serif;
+    pointer-events: none;
+}
+
+/*https://bl.ocks.org/almsuarez/baa897c189ed64ba2bb32cde2876533b*/
+div.tooltip {
+    position: absolute;
+    background-color: white;
+    max-width: 200px;
+    height: auto;
+    padding: 1px;
+    border-style: solid;
+    border-radius: 4px;
+    border-width: 1px;
+    box-shadow: 3px 3px 10px rgba(0, 0, 0, .5);
+    pointer-events: none;
+}
+
+.slider
+{
+    color:#fff;
+}
+
